@@ -21,9 +21,13 @@ go run ./cmd/sliding-median --generate 20000 --window 101 --counters
 
 ## 现在的行为
 
-- `Medians` 每个窗口都 `sort.Slice` 一份拷贝：比较次数 ≈ n×w（`compared=2009900`）。
-- 偶数窗口直接取 `chunk[w/2]`（下中位），没有取两个中间值的平均：`1,2,3,4` 给 `3`。
-- 窗口大于数据或 window ≤ 0 时返回 nil（这点是对的）。
+- `Medians` 用两个堆（下半大顶堆、上半小顶堆）加延迟删除增量维护：
+  每次滑动 O(log w)，整体 O(n log w)，内存 O(w)，不复制窗口内容；
+  `--generate 20000 --window 101 --counters` 的 `compared` 从 2009900 降到约 35 万。
+- 偶数窗口取两个中间值的平均：`1,2,3,4` 给 `2.5`。
+- 窗口大于数据、window ≤ 0 或数据为空时返回空。
+- `MediansNaive`（naive.go）是朴素参考实现（每个窗口复制 + 排序），
+  测试用它对 1 万组随机数据逐窗口对照，并比较比较次数量级。
 
 ## 计划新增的能力
 
